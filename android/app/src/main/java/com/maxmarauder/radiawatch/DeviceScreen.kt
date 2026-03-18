@@ -93,7 +93,7 @@ fun DeviceScreen(
 
                         if (state.doseRate != null) {
                             Text(
-                                text = "%.4f".format(state.doseRate),
+                                text = "%.2f".format(state.doseRate),
                                 fontSize = 56.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,

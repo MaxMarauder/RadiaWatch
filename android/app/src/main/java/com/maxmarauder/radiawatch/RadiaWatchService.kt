@@ -196,8 +196,9 @@ class RadiaWatchService : Service() {
                             val raw = client.readDataBuf().awaitResult()
                             val data = RadiacodeDataBuf.decodeLatestRealTime(raw)
                             if (data != null) {
-                                AppState.updateConnectionState(ConnectionState.Connected(scanned, data.doseRate))
-                                updateNotification("${scanned.name}: ${"%.4f".format(data.doseRate)} μSv/h")
+                                val doseRateUSvH = data.doseRate * 10_000.0f
+                                AppState.updateConnectionState(ConnectionState.Connected(scanned, doseRateUSvH))
+                                updateNotification("${scanned.name}: ${"%.2f".format(doseRateUSvH)} μSv/h")
                             }
                         } catch (e: CancellationException) {
                             throw e

@@ -4,7 +4,7 @@ import java.time.Instant
 
 internal data class RealTimeData(
     val timestamp: Instant,
-    val doseRate: Float,       // μSv/h
+    val doseRate: Float,       // Sv/h (raw from device; multiply by 10000 for μSv/h)
     val countRate: Float,      // CPS
     val doseRateErr: Float,
     val countRateErr: Float,
