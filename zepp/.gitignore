@@ -1,0 +1,17 @@
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Zeus / Zepp CLI
+.zeus/
+*.zpk
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

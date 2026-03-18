@@ -48,6 +48,8 @@ class RadiaWatchService : Service() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private val radiationServer = RadiationServer(8080)
+
     private val seenDevices = LinkedHashMap<String, ScannedDevice>()
     private var isScanning = false
 
@@ -65,6 +67,7 @@ class RadiaWatchService : Service() {
         } else {
             startForeground(NOTIF_ID, buildNotification("RadiaWatch running"))
         }
+        radiationServer.start()
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -91,6 +94,7 @@ class RadiaWatchService : Service() {
         super.onDestroy()
         stopScan()
         cancelConnection()
+        radiationServer.stop()
         scope.cancel()
     }
 
@@ -199,6 +203,8 @@ class RadiaWatchService : Service() {
                                 val doseRateUSvH = data.doseRate * 10_000.0f
                                 AppState.updateConnectionState(ConnectionState.Connected(scanned, doseRateUSvH))
                                 updateNotification("${scanned.name}: ${"%.2f".format(doseRateUSvH)} μSv/h")
+                                radiationServer.doseRate = doseRateUSvH.toDouble()
+                                radiationServer.cps = data.countRate.toInt()
                             }
                         } catch (e: CancellationException) {
                             throw e
