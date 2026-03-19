@@ -17,7 +17,7 @@ Page(
                         this._units.setProperty(prop.VISIBLE, true)
                     })
                     .catch(() => {})
-            }, 1000)
+            }, 500)
         },
 
         build() {
