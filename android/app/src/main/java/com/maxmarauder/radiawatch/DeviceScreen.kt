@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -65,14 +64,10 @@ fun DeviceScreen(
                         Text(
                             "Connecting to ${state.device.name}…",
                             style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(horizontal = 32.dp),
                         )
                         Spacer(Modifier.height(32.dp))
-                        Button(
-                            onClick = onDisconnect,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                            )
-                        ) {
+                        Button(onClick = onDisconnect) {
                             Text("Cancel")
                         }
                     }
@@ -114,12 +109,7 @@ fun DeviceScreen(
                         }
 
                         Spacer(Modifier.height(48.dp))
-                        Button(
-                            onClick = onDisconnect,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                            )
-                        ) {
+                        Button(onClick = onDisconnect) {
                             Text("Disconnect")
                         }
                     }
