@@ -1,5 +1,7 @@
-import { createWidget, widget, prop, align } from '@zos/ui'
+import { createWidget, widget, prop, align, event } from '@zos/ui'
 import { Vibrator, VIBRATOR_SCENE_SHORT_STRONG, VIBRATOR_SCENE_SHORT_MIDDLE } from '@zos/sensor'
+import { setPageBrightTime, resetPageBrightTime, pauseDropWristScreenOff, resetDropWristScreenOff } from '@zos/display'
+import { localStorage } from '@zos/storage'
 import { BasePage } from '@zeppos/zml/base-page'
 
 const GREEN  = 0x00e676
@@ -11,6 +13,9 @@ const vibrator = new Vibrator()
 Page(
     BasePage({
         onInit() {
+            this._keepLit = localStorage.getItem('keepScreenLit') === 'true'
+            this._applyScreenSetting()
+
             this._alarm1 = 0
             this._alarm2 = 0
             this._aboveAlarm1 = false
@@ -65,6 +70,25 @@ Page(
             }, 500)
         },
 
+        _applyScreenSetting() {
+            if (this._keepLit) {
+                setPageBrightTime({ brightTime: 2147483000 })
+                pauseDropWristScreenOff({ duration: 0 })
+            } else {
+                resetPageBrightTime()
+                resetDropWristScreenOff()
+            }
+        },
+
+        _toggleScreenLit() {
+            this._keepLit = !this._keepLit
+            localStorage.setItem('keepScreenLit', String(this._keepLit))
+            this._applyScreenSetting()
+            this._bulb.setProperty(prop.MORE, {
+                text: this._keepLit ? '\u25cf' : '\u25cb',
+            })
+        },
+
         _showNoData() {
             this._value.setProperty(prop.VISIBLE, false)
             this._units.setProperty(prop.VISIBLE, false)
@@ -77,7 +101,7 @@ Page(
                 x: 0,
                 y: 0,
                 w: 480,
-                h: 480,
+                h: 415,
                 text: 'Waiting...',
                 text_size: 36,
                 color: YELLOW,
@@ -126,6 +150,24 @@ Page(
             // Explicitly hide in case createWidget visible:false is not reliable
             this._value.setProperty(prop.VISIBLE, false)
             this._units.setProperty(prop.VISIBLE, false)
+
+            // Light bulb toggle — created last so it layers above the waiting overlay
+            this._bulb = createWidget(widget.TEXT, {
+                x: 0,
+                y: 415,
+                w: 480,
+                h: 55,
+                text: this._keepLit ? '\u25cf' : '\u25cb',
+                text_size: 32,
+                color: YELLOW,
+                align_h: align.CENTER_H,
+                align_v: align.CENTER_V,
+            })
+            this._bulb.addEventListener(event.CLICK_DOWN, () => this._toggleScreenLit())
+        },
+
+        onDestroy() {
+            resetDropWristScreenOff()
         },
     })
 )

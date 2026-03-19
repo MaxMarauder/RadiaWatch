@@ -12,7 +12,7 @@
     "vender": "zepp",
     "description": "Real-time radiation monitor via Radiacode"
   },
-  "permissions": ["device:os.vibrator", "device:os.sensor"],
+  "permissions": ["device:os.vibrator", "device:os.sensor", "device:os.local_storage"],
   "runtime": {
     "apiVersion": {
       "compatible": "4.0",
