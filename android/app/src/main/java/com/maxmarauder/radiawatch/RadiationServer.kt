@@ -17,10 +17,14 @@ class RadiationServer(port: Int) : NanoHTTPD(port) {
     @Volatile
     var alarm2USvH: Double = 0.0
 
+    @Volatile
+    var connected: Boolean = false
+
     override fun serve(session: IHTTPSession): Response {
         return when (session.uri) {
             "/radiation" -> {
                 val json = JSONObject().apply {
+                    put("connected", connected)
                     put("usvh", doseRate)
                     put("cps", cps)
                     put("alarm1", alarm1USvH)

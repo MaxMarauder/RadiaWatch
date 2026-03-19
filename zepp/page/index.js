@@ -20,6 +20,12 @@ Page(
                 this.httpRequest({ url: 'http://127.0.0.1:8080/radiation' })
                     .then((res) => {
                         const data = res.body
+
+                        if (!data.connected) {
+                            this._showNoData()
+                            return
+                        }
+
                         const usvh = data.usvh
 
                         // Cache alarm thresholds (non-zero values only)
@@ -34,9 +40,10 @@ Page(
                         // can never prevent the display from updating
                         const color = nowAboveAlarm2 ? RED : nowAboveAlarm1 ? YELLOW : GREEN
                         this._waiting.setProperty(prop.VISIBLE, false)
-                        this._symbol.setProperty(prop.VISIBLE, true)
-                        this._value.setProperty(prop.MORE, { color, visible: true, text: usvh.toFixed(2) })
-                        this._units.setProperty(prop.MORE, { color, visible: true })
+                        this._value.setProperty(prop.MORE, { color, text: usvh.toFixed(2) })
+                        this._value.setProperty(prop.VISIBLE, true)
+                        this._units.setProperty(prop.MORE, { color })
+                        this._units.setProperty(prop.VISIBLE, true)
 
                         // Update state before vibration for the same reason
                         const wasAboveAlarm1 = this._aboveAlarm1
@@ -54,8 +61,15 @@ Page(
                             }
                         } catch (_) {}
                     })
-                    .catch(() => {})
+                    .catch(() => { this._showNoData() })
             }, 500)
+        },
+
+        _showNoData() {
+            this._value.setProperty(prop.VISIBLE, false)
+            this._units.setProperty(prop.VISIBLE, false)
+            this._waiting.setProperty(prop.TEXT, 'No data')
+            this._waiting.setProperty(prop.VISIBLE, true)
         },
 
         build() {
@@ -81,7 +95,6 @@ Page(
                 color: YELLOW,
                 align_h: align.CENTER_H,
                 align_v: align.CENTER_V,
-                visible: false,
             })
 
             this._value = createWidget(widget.TEXT, {
@@ -109,6 +122,10 @@ Page(
                 align_v: align.CENTER_V,
                 visible: false,
             })
+
+            // Explicitly hide in case createWidget visible:false is not reliable
+            this._value.setProperty(prop.VISIBLE, false)
+            this._units.setProperty(prop.VISIBLE, false)
         },
     })
 )

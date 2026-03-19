@@ -215,6 +215,7 @@ class RadiaWatchService : Service() {
                                 updateNotification("${scanned.name}: ${"%.2f".format(doseRateUSvH)} μSv/h")
                                 radiationServer.doseRate = doseRateUSvH.toDouble()
                                 radiationServer.cps = data.countRate.toInt()
+                                radiationServer.connected = true
                             }
                         } catch (e: CancellationException) {
                             throw e
@@ -250,6 +251,7 @@ class RadiaWatchService : Service() {
         connectJob = null
         bleClient?.close()
         bleClient = null
+        radiationServer.connected = false
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
