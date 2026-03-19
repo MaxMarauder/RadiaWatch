@@ -1,20 +1,58 @@
 import { createWidget, widget, prop, align } from '@zos/ui'
+import { Vibrator, VIBRATOR_SCENE_SHORT_STRONG, VIBRATOR_SCENE_SHORT_MIDDLE } from '@zos/sensor'
 import { BasePage } from '@zeppos/zml/base-page'
 
+const GREEN  = 0x00e676
 const YELLOW = 0xffff00
+const RED    = 0xff0000
+
+const vibrator = new Vibrator()
 
 Page(
     BasePage({
         onInit() {
+            this._alarm1 = 0
+            this._alarm2 = 0
+            this._aboveAlarm1 = false
+            this._aboveAlarm2 = false
+
             setInterval(() => {
                 this.httpRequest({ url: 'http://127.0.0.1:8080/radiation' })
                     .then((res) => {
                         const data = res.body
+                        const usvh = data.usvh
+
+                        // Cache alarm thresholds (non-zero values only)
+                        if (data.alarm1 > 0) this._alarm1 = data.alarm1
+                        if (data.alarm2 > 0) this._alarm2 = data.alarm2
+
+                        // Determine alarm state
+                        const nowAboveAlarm2 = this._alarm2 > 0 && usvh >= this._alarm2
+                        const nowAboveAlarm1 = this._alarm1 > 0 && usvh >= this._alarm1
+
+                        // Update display — done before vibration so a vibration error
+                        // can never prevent the display from updating
+                        const color = nowAboveAlarm2 ? RED : nowAboveAlarm1 ? YELLOW : GREEN
                         this._waiting.setProperty(prop.VISIBLE, false)
                         this._symbol.setProperty(prop.VISIBLE, true)
-                        this._value.setProperty(prop.VISIBLE, true)
-                        this._value.setProperty(prop.TEXT, data.usvh.toFixed(2))
-                        this._units.setProperty(prop.VISIBLE, true)
+                        this._value.setProperty(prop.MORE, { color, visible: true, text: usvh.toFixed(2) })
+                        this._units.setProperty(prop.MORE, { color, visible: true })
+
+                        // Update state before vibration for the same reason
+                        const wasAboveAlarm1 = this._aboveAlarm1
+                        const wasAboveAlarm2 = this._aboveAlarm2
+                        this._aboveAlarm1 = nowAboveAlarm1
+                        this._aboveAlarm2 = nowAboveAlarm2
+
+                        // Vibrate on upward threshold crossings (isolated so any error
+                        // doesn't affect the display update above)
+                        try {
+                            if (nowAboveAlarm2 && !wasAboveAlarm2) {
+                                vibrator.start({ mode: VIBRATOR_SCENE_SHORT_STRONG })
+                            } else if (nowAboveAlarm1 && !wasAboveAlarm1) {
+                                vibrator.start({ mode: VIBRATOR_SCENE_SHORT_MIDDLE })
+                            }
+                        } catch (_) {}
                     })
                     .catch(() => {})
             }, 500)

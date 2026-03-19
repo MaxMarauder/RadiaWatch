@@ -145,6 +145,29 @@ internal class RadiacodeBleClient(
             }
     }
 
+    fun readAlarmThresholds(): CompletableFuture<Pair<Double, Double>> {
+        return readVirtSfr(RadiacodeProtocol.VSFR_DR_ALARM1)
+            .thenCompose { alarm1URh ->
+                readVirtSfr(RadiacodeProtocol.VSFR_DR_ALARM2)
+                    .thenApply { alarm2URh ->
+                        // Convert µR/h → µSv/h  (1 µR/h ≈ 0.01 µSv/h)
+                        Pair(alarm1URh * 0.01, alarm2URh * 0.01)
+                    }
+            }
+    }
+
+    private fun readVirtSfr(vsfrAddr: Long): CompletableFuture<Double> {
+        val payload = RadiacodeProtocol.packU32LE(vsfrAddr)
+        return execute(RadiacodeProtocol.COMMAND_RD_VIRT_SFR, payload)
+            .thenApply { resp ->
+                if (resp.size < 8) throw IllegalStateException("RD_VIRT_SFR response too short")
+                val bb = ByteBuffer.wrap(resp).order(ByteOrder.LITTLE_ENDIAN)
+                val retcode = bb.int
+                if (retcode != 1) throw IllegalStateException("RD_VIRT_SFR failed ret=$retcode")
+                bb.int.toLong().and(0xFFFF_FFFFL).toDouble()
+            }
+    }
+
     fun readDataBuf(): CompletableFuture<ByteArray> {
         val payload = RadiacodeProtocol.packU32LE(RadiacodeProtocol.VS_DATA_BUF.toLong())
         return execute(RadiacodeProtocol.COMMAND_RD_VIRT_STRING, payload)

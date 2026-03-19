@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
                 val scanResults by viewModel.scanResults.collectAsState()
                 val connectionState by viewModel.connectionState.collectAsState()
                 val isScanning by viewModel.isScanning.collectAsState()
+                val alarmThresholds by viewModel.alarmThresholds.collectAsState()
 
                 var permissionsGranted by remember { mutableStateOf(hasAllPermissions()) }
 
@@ -86,6 +87,7 @@ class MainActivity : ComponentActivity() {
                 if (showDevice) {
                     DeviceScreen(
                         state = connectionState,
+                        alarmThresholds = alarmThresholds,
                         onDisconnect = {
                             sendServiceAction(RadiaWatchService.ACTION_DISCONNECT)
                         }

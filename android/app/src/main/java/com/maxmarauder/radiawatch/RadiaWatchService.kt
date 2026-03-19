@@ -190,6 +190,16 @@ class RadiaWatchService : Service() {
                 client.ready().awaitResult()
                 client.initializeSession().awaitResult()
 
+                try {
+                    val (a1, a2) = client.readAlarmThresholds().awaitResult()
+                    radiationServer.alarm1USvH = a1
+                    radiationServer.alarm2USvH = a2
+                    AppState.updateAlarmThresholds(a1, a2)
+                    Log.d(TAG, "Alarm thresholds: alarm1=$a1 µSv/h, alarm2=$a2 µSv/h")
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Failed to read alarm thresholds", t)
+                }
+
                 AppState.updateConnectionState(ConnectionState.Connected(scanned, null))
                 updateNotification("Connected to ${scanned.name}")
 
@@ -228,6 +238,7 @@ class RadiaWatchService : Service() {
     private fun disconnect() {
         cancelConnection()
         AppState.updateConnectionState(ConnectionState.Disconnected)
+        AppState.clearAlarmThresholds()
         startScan()
     }
 

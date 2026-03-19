@@ -11,11 +11,14 @@ internal object RadiacodeProtocol {
 
     const val COMMAND_SET_EXCHANGE = 0x0007
     const val COMMAND_SET_TIME = 0x0A04
+    const val COMMAND_RD_VIRT_SFR = 0x0824
     const val COMMAND_WR_VIRT_SFR = 0x0825
     const val COMMAND_RD_VIRT_STRING = 0x0826
 
     const val VS_DATA_BUF = 0x0100
-    const val VSFR_DEVICE_TIME = 0x0504
+    const val VSFR_DEVICE_TIME = 0x0504L
+    const val VSFR_DR_ALARM1 = 0x8000L   // Dose rate alarm level 1 (µR/h)
+    const val VSFR_DR_ALARM2 = 0x8001L   // Dose rate alarm level 2 (µR/h)
 
     fun buildRequest(command: Int, seq: Int, args: ByteArray): ByteArray {
         val reqSeqNo = (0x80 + (seq and 0x1F)) and 0xFF

@@ -28,7 +28,12 @@ object AppState {
     private val _isScanning = MutableStateFlow(false)
     val isScanning = _isScanning.asStateFlow()
 
+    private val _alarmThresholds = MutableStateFlow<Pair<Double, Double>?>(null)
+    val alarmThresholds = _alarmThresholds.asStateFlow()
+
     fun updateScanResults(results: List<ScannedDevice>) { _scanResults.value = results }
     fun updateConnectionState(state: ConnectionState) { _connectionState.value = state }
     fun setScanning(scanning: Boolean) { _isScanning.value = scanning }
+    fun updateAlarmThresholds(alarm1: Double, alarm2: Double) { _alarmThresholds.value = Pair(alarm1, alarm2) }
+    fun clearAlarmThresholds() { _alarmThresholds.value = null }
 }

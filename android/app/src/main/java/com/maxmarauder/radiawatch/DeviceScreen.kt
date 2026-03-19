@@ -19,14 +19,20 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+private val AlarmGreen  = Color(0xFF00C853)
+private val AlarmYellow = Color(0xFFFFD600)
+private val AlarmRed    = Color(0xFFD32F2F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceScreen(
     state: ConnectionState,
+    alarmThresholds: Pair<Double, Double>?,
     onDisconnect: () -> Unit,
 ) {
     val deviceName = when (state) {
@@ -87,16 +93,22 @@ fun DeviceScreen(
                         Spacer(Modifier.height(8.dp))
 
                         if (state.doseRate != null) {
+                            val doseRate = state.doseRate
+                            val valueColor = when {
+                                alarmThresholds != null && doseRate >= alarmThresholds.second -> AlarmRed
+                                alarmThresholds != null && doseRate >= alarmThresholds.first  -> AlarmYellow
+                                else -> AlarmGreen
+                            }
                             Text(
-                                text = "%.2f".format(state.doseRate),
+                                text = "%.2f".format(doseRate),
                                 fontSize = 56.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = valueColor,
                             )
                             Text(
                                 text = "μSv/h",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = valueColor,
                             )
                         } else {
                             CircularProgressIndicator(modifier = Modifier.size(40.dp))
@@ -105,6 +117,22 @@ fun DeviceScreen(
                                 "Initializing…",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        if (alarmThresholds != null) {
+                            Spacer(Modifier.height(16.dp))
+                            val doseRate = state.doseRate ?: 0f
+                            Text(
+                                text = "Alarm 1: ${"%.2f".format(alarmThresholds.first)} μSv/h",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (doseRate >= alarmThresholds.first) AlarmRed else AlarmYellow,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "Alarm 2: ${"%.2f".format(alarmThresholds.second)} μSv/h",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (doseRate >= alarmThresholds.second) AlarmRed else AlarmYellow,
                             )
                         }
 
