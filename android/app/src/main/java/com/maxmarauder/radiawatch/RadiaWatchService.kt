@@ -179,57 +179,85 @@ class RadiaWatchService : Service() {
         AppState.updateConnectionState(ConnectionState.Connecting(scanned))
         updateNotification("Connecting to ${scanned.name}…")
 
-        val client = RadiacodeBleClient(this) { status ->
-            Log.d(TAG, "BLE: $status")
-        }
-        bleClient = client
-        client.connect(scanned.bluetoothDevice)
-
         connectJob = scope.launch {
-            try {
-                client.ready().awaitResult()
-                client.initializeSession().awaitResult()
+            var lastError: Throwable? = null
+
+            for (attempt in 1..3) {
+                if (!isActive) break
+
+                if (attempt > 1) {
+                    Log.d(TAG, "Connection attempt $attempt/3, waiting before retry…")
+                    delay(2_000L)
+                    if (!isActive) break
+                }
+
+                val client = RadiacodeBleClient(this@RadiaWatchService) { status ->
+                    Log.d(TAG, "BLE[$attempt]: $status")
+                }
+                bleClient = client
+                client.connect(scanned.bluetoothDevice)
 
                 try {
-                    val (a1, a2) = client.readAlarmThresholds().awaitResult()
-                    radiationServer.alarm1USvH = a1
-                    radiationServer.alarm2USvH = a2
-                    AppState.updateAlarmThresholds(a1, a2)
-                    Log.d(TAG, "Alarm thresholds: alarm1=$a1 µSv/h, alarm2=$a2 µSv/h")
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to read alarm thresholds", t)
-                }
+                    client.ready().awaitResult()
+                    client.initializeSession().awaitResult()
 
-                AppState.updateConnectionState(ConnectionState.Connected(scanned, null))
-                updateNotification("Connected to ${scanned.name}")
+                    // ── Connected ─────────────────────────────────────────
+                    lastError = null
 
-                // Polling loop ~1 Hz
-                pollJob = launch {
-                    while (isActive) {
-                        try {
-                            val raw = client.readDataBuf().awaitResult()
-                            val data = RadiacodeDataBuf.decodeLatestRealTime(raw)
-                            if (data != null) {
-                                val doseRateUSvH = data.doseRate * 10_000.0f
-                                AppState.updateConnectionState(ConnectionState.Connected(scanned, doseRateUSvH))
-                                updateNotification("${scanned.name}: ${"%.2f".format(doseRateUSvH)} μSv/h")
-                                radiationServer.doseRate = doseRateUSvH.toDouble()
-                                radiationServer.cps = data.countRate.toInt()
-                                radiationServer.connected = true
-                            }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Poll error", t)
-                        }
-                        delay(1_000L)
+                    try {
+                        val (a1, a2) = client.readAlarmThresholds().awaitResult()
+                        radiationServer.alarm1USvH = a1
+                        radiationServer.alarm2USvH = a2
+                        AppState.updateAlarmThresholds(a1, a2)
+                        Log.d(TAG, "Alarm thresholds: alarm1=$a1 µSv/h, alarm2=$a2 µSv/h")
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to read alarm thresholds", t)
                     }
+
+                    AppState.updateConnectionState(ConnectionState.Connected(scanned, null))
+                    updateNotification("Connected to ${scanned.name}")
+
+                    // Polling loop ~1 Hz
+                    pollJob = launch {
+                        while (isActive) {
+                            try {
+                                val raw = client.readDataBuf().awaitResult()
+                                val data = RadiacodeDataBuf.decodeLatestRealTime(raw)
+                                if (data != null) {
+                                    val doseRateUSvH = data.doseRate * 10_000.0f
+                                    AppState.updateConnectionState(ConnectionState.Connected(scanned, doseRateUSvH))
+                                    updateNotification("${scanned.name}: ${"%.2f".format(doseRateUSvH)} μSv/h")
+                                    radiationServer.doseRate = doseRateUSvH.toDouble()
+                                    radiationServer.cps = data.countRate.toInt()
+                                    radiationServer.connected = true
+                                }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (t: Throwable) {
+                                Log.e(TAG, "Poll error", t)
+                            }
+                            delay(1_000L)
+                        }
+                    }
+
+                    return@launch  // success — exit retry loop
+
+                } catch (e: CancellationException) {
+                    client.close()
+                    bleClient = null
+                    throw e
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Connection attempt $attempt/3 failed: ${t.message}")
+                    lastError = t
+                    client.close()
+                    bleClient = null
+                    // continue to next attempt
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (t: Throwable) {
-                Log.e(TAG, "Connection failed", t)
-                AppState.updateConnectionState(ConnectionState.Error(scanned, t.message ?: "Connection failed"))
+            }
+
+            if (lastError != null) {
+                Log.e(TAG, "All connection attempts failed", lastError)
+                AppState.updateConnectionState(ConnectionState.Error(scanned, lastError!!.message ?: "Connection failed"))
                 updateNotification("Connection to ${scanned.name} failed")
             }
         }
