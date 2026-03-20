@@ -90,6 +90,13 @@ class RadiaWatchService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        disconnect()
+        stopSelf()
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onDestroy() {
         super.onDestroy()
         stopScan()
@@ -219,9 +226,11 @@ class RadiaWatchService : Service() {
 
                     // Polling loop ~1 Hz
                     pollJob = launch {
+                        var consecutiveErrors = 0
                         while (isActive) {
                             try {
                                 val raw = client.readDataBuf().awaitResult()
+                                consecutiveErrors = 0
                                 val data = RadiacodeDataBuf.decodeLatestRealTime(raw)
                                 if (data != null) {
                                     val doseRateUSvH = data.doseRate * 10_000.0f
@@ -235,6 +244,11 @@ class RadiaWatchService : Service() {
                                 throw e
                             } catch (t: Throwable) {
                                 Log.e(TAG, "Poll error", t)
+                                if (++consecutiveErrors >= 3) {
+                                    Log.w(TAG, "Reconnecting after $consecutiveErrors consecutive poll failures")
+                                    connectTo(scanned)
+                                    return@launch
+                                }
                             }
                             delay(1_000L)
                         }
