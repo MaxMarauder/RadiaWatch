@@ -21,8 +21,11 @@ Page(
             this._aboveAlarm1 = false
             this._aboveAlarm2 = false
 
-            setInterval(() => {
-                this.httpRequest({ url: 'http://127.0.0.1:8080/radiation' })
+            const poll = () => {
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('timeout')), 3000)
+                )
+                Promise.race([this.httpRequest({ url: 'http://127.0.0.1:8080/radiation' }), timeoutPromise])
                     .then((res) => {
                         const data = res.body
 
@@ -67,7 +70,9 @@ Page(
                         } catch (_) {}
                     })
                     .catch(() => { this._showNoData() })
-            }, 500)
+                    .finally(() => { this._pollTimer = setTimeout(poll, 500) })
+            }
+            this._pollTimer = setTimeout(poll, 0)
         },
 
         _applyScreenSetting() {
@@ -167,6 +172,7 @@ Page(
         },
 
         onDestroy() {
+            clearTimeout(this._pollTimer)
             resetDropWristScreenOff()
         },
     })
