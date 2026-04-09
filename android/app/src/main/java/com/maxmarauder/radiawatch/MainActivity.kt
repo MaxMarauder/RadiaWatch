@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.maxmarauder.radiawatch.ui.theme.RadiaWatchTheme
 
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 

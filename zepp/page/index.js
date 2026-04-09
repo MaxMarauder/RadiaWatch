@@ -134,7 +134,7 @@ Page(
                 x: 0,
                 y: 0,
                 w: 480,
-                h: 415,
+                h: 480,
                 text: 'Waiting...',
                 text_size: 36,
                 color: YELLOW,

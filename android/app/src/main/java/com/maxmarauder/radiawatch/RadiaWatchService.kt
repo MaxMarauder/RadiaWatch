@@ -324,7 +324,7 @@ class RadiaWatchService : Service() {
         return NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle("RadiaWatch")
             .setContentText(text)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_notification_radiation)
             .setContentIntent(pi)
             .setOngoing(true)
             .build()

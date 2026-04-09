@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!--
+        Single path with evenOdd fill: the circle is white; the trefoil sub-paths
+        punch transparent holes so the radiation symbol reads as dark cutouts.
+        Android silhouette rendering then shows: white circle, dark trefoil.
+        Requires API 24+ (minSdk 31, so fine).
+    -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="
+        M50,18 A32,32,0,0,0,50,82 A32,32,0,0,0,50,18 Z
+        M53.5,56.06 L63,72.52 A26,26,0,0,1,37,72.52 L46.5,56.06 A7,7,0,0,0,53.5,56.06 Z
+        M43,50 L24,50 A26,26,0,0,1,37,27.48 L46.5,43.94 A7,7,0,0,0,43,50 Z
+        M53.5,43.94 L63,27.48 A26,26,0,0,1,76,50 L57,50 A7,7,0,0,0,53.5,43.94 Z
+        M50,46 A4,4,0,0,0,50,54 A4,4,0,0,0,50,46 Z" />
+</vector>
