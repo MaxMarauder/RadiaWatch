@@ -50,7 +50,7 @@ When `connected` is `false`, the watch shows "No data" and hides the value/units
 
 | Widget | Position | Description |
 |--------|----------|-------------|
-| `_waiting` | y:0 h:415 | "Waiting..." on launch, "No data" when disconnected |
+| `_waiting` | y:0 h:480 | "Waiting..." on launch, "No data" when disconnected; full-screen overlay |
 | `_symbol` | y:90 h:90 | ☢ radiation symbol (always visible) |
 | `_value` | y:185 h:130 | Dose rate number, text_size 100 (hidden until data arrives) |
 | `_units` | y:320 h:60 | "μSv/h" label (hidden until data arrives) |

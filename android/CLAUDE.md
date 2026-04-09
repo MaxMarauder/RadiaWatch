@@ -73,7 +73,8 @@ RadiaWatch is an Android app that connects to a RadiaCode Geiger counter over BL
 - `ScanScreen` — shows discovered devices via BLE scan
 - `DeviceScreen` — shows live dose rate with 3-tier color: green (below alarm1), yellow (alarm1–alarm2), red (above alarm2); shows alarm threshold lines below the units label
 - `MainViewModel` bridges `AppState` StateFlows to the UI
-- `MainActivity` handles permissions and routes between the two screens
+- `MainActivity` handles permissions and routes between the two screens; calls `enableEdgeToEdge()` then forces `isAppearanceLightStatusBars = false` so status bar icons stay light against the dark background
+- `res/drawable/ic_notification_radiation.xml` — monochrome notification icon: white circle with radiation trefoil cut out as transparent holes (`fillType="evenOdd"`); used by the foreground service notification
 
 ### Data Flow
 
