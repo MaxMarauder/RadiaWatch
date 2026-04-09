@@ -22,15 +22,37 @@ Page(
             this._aboveAlarm2 = false
 
             const poll = () => {
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('timeout')), 3000)
+                // Use an explicit cancellable timeout instead of Promise.race so we
+                // don't allocate a new Promise + Error object on every 500ms tick.
+                let settled = false
+                const timeoutId = setTimeout(() => {
+                    settled = true
+                    this._showNoData()
+                    this._pollTimer = setTimeout(poll, 500)
+                }, 3000)
+
+                // Call messaging.request() directly instead of httpRequest() to
+                // bypass the hmApp.onMessage/offMessage roundtrip that the framework
+                // wraps httpRequest with. That layer registers 2 native message handlers
+                // per request plus an extra Promise and only cleans them up in .finally()
+                // after the BLE response returns — under 500ms polling this accumulates.
+                // Pass an explicit timeout slightly longer than our app-level one so
+                // abandoned BLE requests (after app timeout fires) are cleaned up promptly
+                // rather than lingering for the framework's default 60 seconds.
+                this.messaging.request(
+                    { method: 'http.request', params: { url: 'http://127.0.0.1:8080/radiation' } },
+                    { timeout: 4000 }
                 )
-                Promise.race([this.httpRequest({ url: 'http://127.0.0.1:8080/radiation' }), timeoutPromise])
                     .then((res) => {
+                        if (settled) return
+                        settled = true
+                        clearTimeout(timeoutId)
+
                         const data = res.body
 
                         if (!data.connected) {
                             this._showNoData()
+                            this._pollTimer = setTimeout(poll, 500)
                             return
                         }
 
@@ -68,9 +90,15 @@ Page(
                                 vibrator.start({ mode: VIBRATOR_SCENE_SHORT_MIDDLE })
                             }
                         } catch (_) {}
+                        this._pollTimer = setTimeout(poll, 500)
                     })
-                    .catch(() => { this._showNoData() })
-                    .finally(() => { this._pollTimer = setTimeout(poll, 500) })
+                    .catch(() => {
+                        if (settled) return
+                        settled = true
+                        clearTimeout(timeoutId)
+                        this._showNoData()
+                        this._pollTimer = setTimeout(poll, 500)
+                    })
             }
             this._pollTimer = setTimeout(poll, 0)
         },
